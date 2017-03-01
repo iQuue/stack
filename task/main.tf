@@ -62,6 +62,11 @@ variable "memory" {
   default     = 512
 }
 
+variable "working_directory" {
+  description = "The working directory of the container process."
+  default = "/"
+}
+
 /**
  * Resources.
  */
@@ -88,6 +93,7 @@ resource "aws_ecs_task_definition" "main" {
     "name": "${var.name}",
     "portMappings": ${var.ports},
     "entryPoint": ${var.entry_point},
+    "workingDirectory": "${var.working_directory}",
     "mountPoints": [],
     "logConfiguration": {
       "logDriver": "journald",
