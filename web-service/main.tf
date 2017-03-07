@@ -135,6 +135,8 @@ variable "deployment_maximum_percent" {
   default     = 200
 }
 
+variable vpc_id {}
+
 /**
  * Resources.
  */
@@ -171,6 +173,7 @@ module "task" {
   cpu               = "${var.cpu}"
   working_directory  = "${var.working_directory}"
 
+
   ports = <<EOF
   [
     {
@@ -196,6 +199,7 @@ module "elb" {
   security_groups    = "${var.security_groups}"
   log_bucket         = "${var.log_bucket}"
   ssl_certificate_id = "${var.ssl_certificate_id}"
+  vpc_id             = "${var.vpc_id}"
 }
 
 /**
