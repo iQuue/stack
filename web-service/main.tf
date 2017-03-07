@@ -1,6 +1,6 @@
 /**
  * The web-service is similar to the `service` module, but the
- * it provides a __public__ ELB instead.
+ * it provides a __public__ ALB instead.
  *
  * Usage:
  *
@@ -36,11 +36,11 @@ variable "version" {
 }
 
 variable "subnet_ids" {
-  description = "Comma separated list of subnet IDs that will be passed to the ELB module"
+  description = "Comma separated list of subnet IDs that will be passed to the ALB module"
 }
 
 variable "security_groups" {
-  description = "Comma separated list of security group IDs that will be passed to the ELB module"
+  description = "Comma separated list of security group IDs that will be passed to the ALB module"
 }
 
 variable "port" {
@@ -52,7 +52,7 @@ variable "cluster" {
 }
 
 variable "log_bucket" {
-  description = "The S3 bucket ID to use for the ELB"
+  description = "The S3 bucket ID to use for the ALB"
 }
 
 variable "ssl_certificate_id" {
@@ -64,12 +64,12 @@ variable "iam_role" {
 }
 
 variable "external_dns_name" {
-  description = "The subdomain under which the ELB is exposed externally, defaults to the task name"
+  description = "The subdomain under which the ALB is exposed externally, defaults to the task name"
   default     = ""
 }
 
 variable "internal_dns_name" {
-  description = "The subdomain under which the ELB is exposed internally, defaults to the task name"
+  description = "The subdomain under which the ALB is exposed internally, defaults to the task name"
   default     = ""
 }
 
@@ -135,6 +135,8 @@ variable "deployment_maximum_percent" {
   default     = 200
 }
 
+variable vpc_id {}
+
 /**
  * Resources.
  */
@@ -149,7 +151,7 @@ resource "aws_ecs_service" "main" {
   deployment_maximum_percent         = "${var.deployment_maximum_percent}"
 
   load_balancer {
-    elb_name       = "${module.elb.id}"
+    target_group_arn = "${module.alb.target_group}"
     container_name = "${module.task.name}"
     container_port = "${var.container_port}"
   }
@@ -181,8 +183,8 @@ module "task" {
 EOF
 }
 
-module "elb" {
-  source = "./elb"
+module "alb" {
+  source = "./alb"
 
   name               = "${module.task.name}"
   port               = "${var.port}"
@@ -196,38 +198,39 @@ module "elb" {
   security_groups    = "${var.security_groups}"
   log_bucket         = "${var.log_bucket}"
   ssl_certificate_id = "${var.ssl_certificate_id}"
+  vpc_id             = "${var.vpc_id}"
 }
 
 /**
  * Outputs.
  */
 
-// The name of the ELB
+// The name of the ALB
 output "name" {
-  value = "${module.elb.name}"
+  value = "${module.alb.name}"
 }
 
-// The DNS name of the ELB
+// The DNS name of the ALB
 output "dns" {
-  value = "${module.elb.dns}"
+  value = "${module.alb.dns}"
 }
 
-// The id of the ELB
-output "elb" {
-  value = "${module.elb.id}"
+// The id of the ALB
+output "alb" {
+  value = "${module.alb.id}"
 }
 
-// The zone id of the ELB
+// The zone id of the ALB
 output "zone_id" {
-  value = "${module.elb.zone_id}"
+  value = "${module.alb.zone_id}"
 }
 
 // FQDN built using the zone domain and name (external)
 output "external_fqdn" {
-  value = "${module.elb.external_fqdn}"
+  value = "${module.alb.external_fqdn}"
 }
 
 // FQDN built using the zone domain and name (internal)
 output "internal_fqdn" {
-  value = "${module.elb.internal_fqdn}"
+  value = "${module.alb.internal_fqdn}"
 }
