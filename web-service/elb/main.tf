@@ -48,6 +48,9 @@ variable "internal_zone_id" {
   description = "The zone ID to create the record in"
 }
 
+variable "ssl_certificate_id" {
+}
+
 /**
  * Resources.
  */
@@ -69,6 +72,14 @@ resource "aws_elb" "main" {
     lb_protocol       = "http"
     instance_port     = "${var.port}"
     instance_protocol = "http"
+  }
+
+  listener {
+    lb_port            = 443
+    lb_protocol        = "https"
+    instance_port      = "${var.port}"
+    instance_protocol  = "http"
+    ssl_certificate_id = "${var.ssl_certificate_id}"
   }
 
   health_check {
