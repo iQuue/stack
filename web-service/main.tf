@@ -7,7 +7,6 @@
  *      module "auth_service" {
  *        source    = "github.com/segmentio/stack/service"
  *        name      = "auth-service"
- *        image     = "auth-service"
  *        cluster   = "default"
  *      }
  *
@@ -21,18 +20,8 @@ variable "environment" {
   description = "Environment tag, e.g prod"
 }
 
-variable "image" {
-  description = "The docker image name, e.g nginx"
-}
-
 variable "name" {
-  description = "The service name, if empty the service name is defaulted to the image name"
-  default     = ""
-}
-
-variable "version" {
-  description = "The docker image version"
-  default     = "latest"
+  description = "The service name."
 }
 
 variable "subnet_ids" {
@@ -43,8 +32,8 @@ variable "security_groups" {
   description = "Comma separated list of security group IDs that will be passed to the ALB module"
 }
 
-variable "port" {
-  description = "The container host port"
+variable "external_port" {
+  description = "The external port"
 }
 
 variable "cluster" {
@@ -95,34 +84,9 @@ variable "container_port" {
   default     = 3000
 }
 
-variable "command" {
-  description = "The raw json of the task command"
-  default     = "[]"
-}
-
-variable "env_vars" {
-  description = "The raw json of the task env vars"
-  default     = "[]"
-}
-
 variable "desired_count" {
   description = "The desired count"
   default     = 2
-}
-
-variable "memory" {
-  description = "The number of MiB of memory to reserve for the container"
-  default     = 512
-}
-
-variable "cpu" {
-  description = "The number of cpu units to reserve for the container"
-  default     = 512
-}
-
-variable "working_directory" {
-  description = "The working directory of the container process."
-  default = "/"
 }
 
 variable "deployment_minimum_healthy_percent" {
@@ -133,6 +97,14 @@ variable "deployment_minimum_healthy_percent" {
 variable "deployment_maximum_percent" {
   description = "upper limit (% of desired_count) of # of running tasks during a deployment"
   default     = 200
+}
+
+variable "load_balancer_container_name" {
+  description = "The name of the container to attach to the load balancer."
+}
+
+variable "container_definitions" {
+  description = "JSON container definitions."
 }
 
 variable vpc_id {}
@@ -152,8 +124,8 @@ resource "aws_ecs_service" "main" {
 
   load_balancer {
     target_group_arn = "${module.alb.target_group}"
-    container_name = "${module.task.name}"
-    container_port = "${var.container_port}"
+    container_name   = "${var.load_balancer_container_name}"
+    container_port   = "${var.container_port}"
   }
 
   lifecycle {
@@ -164,30 +136,15 @@ resource "aws_ecs_service" "main" {
 module "task" {
   source = "../task"
 
-  name              = "${coalesce(var.name, replace(var.image, "/", "-"))}"
-  image             = "${var.image}"
-  image_version     = "${var.version}"
-  command           = "${var.command}"
-  env_vars          = "${var.env_vars}"
-  memory            = "${var.memory}"
-  cpu               = "${var.cpu}"
-  working_directory  = "${var.working_directory}"
-
-  ports = <<EOF
-  [
-    {
-      "containerPort": ${var.container_port},
-      "hostPort": ${var.port}
-    }
-  ]
-EOF
+  name                  = "${var.name}"
+  container_definitions = "${var.container_definitions}"
 }
 
 module "alb" {
   source = "./alb"
 
   name               = "${module.task.name}"
-  port               = "${var.port}"
+  port               = "${var.external_port}"
   environment        = "${var.environment}"
   subnet_ids         = "${var.subnet_ids}"
   external_dns_name  = "${coalesce(var.external_dns_name, module.task.name)}"
