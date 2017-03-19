@@ -6,7 +6,6 @@
  *     module "nginx" {
  *       source = "github.com/segmentio/stack/task"
  *       name   = "nginx"
- *       image  = "nginx"
  *     }
  *
  */
@@ -15,56 +14,12 @@
  * Required Variables.
  */
 
-variable "image" {
-  description = "The docker image name, e.g nginx"
-}
-
 variable "name" {
   description = "The worker name, if empty the service name is defaulted to the image name"
 }
 
-/**
- * Optional Variables.
- */
-
-variable "cpu" {
-  description = "The number of cpu units to reserve for the container"
-  default     = 512
-}
-
-variable "env_vars" {
-  description = "The raw json of the task env vars"
-  default     = "[]"
-} # [{ "name": name, "value": value }]
-
-variable "command" {
-  description = "The raw json of the task command"
-  default     = "[]"
-} # ["--key=foo","--port=bar"]
-
-variable "entry_point" {
-  description = "The docker container entry point"
-  default     = "[]"
-}
-
-variable "ports" {
-  description = "The docker container ports"
-  default     = "[]"
-}
-
-variable "image_version" {
-  description = "The docker image version"
-  default     = "latest"
-}
-
-variable "memory" {
-  description = "The number of MiB of memory to reserve for the container"
-  default     = 512
-}
-
-variable "working_directory" {
-  description = "The working directory of the container process."
-  default = "/"
+variable "container_definitions" {
+  description = "JSON container definition."
 }
 
 /**
@@ -81,29 +36,7 @@ resource "aws_ecs_task_definition" "main" {
     create_before_destroy = true
   }
 
-  container_definitions = <<EOF
-[
-  {
-    "cpu": ${var.cpu},
-    "environment": ${var.env_vars},
-    "essential": true,
-    "command": ${var.command},
-    "image": "${var.image}:${var.image_version}",
-    "memory": ${var.memory},
-    "name": "${var.name}",
-    "portMappings": ${var.ports},
-    "entryPoint": ${var.entry_point},
-    "workingDirectory": "${var.working_directory}",
-    "mountPoints": [],
-    "logConfiguration": {
-      "logDriver": "journald",
-      "options": {
-        "tag": "${var.name}"
-      }
-    }
-  }
-]
-EOF
+  container_definitions = "${var.container_definitions}"
 }
 
 /**

@@ -48,11 +48,9 @@ variable "internal_zone_id" {
   description = "The zone ID to create the record in"
 }
 
-variable "ssl_certificate_id" {
-}
+variable "ssl_certificate_id" {}
 
-variable "vpc_id" {
-}
+variable "vpc_id" {}
 
 /**
  * Resources.
@@ -60,10 +58,10 @@ variable "vpc_id" {
 
 # Create a new load balancer
 resource "aws_alb" "main" {
-  name = "${var.name}"
-  internal                  = false
-  subnets                   = ["${split(",", var.subnet_ids)}"]
-  security_groups           = ["${split(",",var.security_groups)}"]
+  name            = "${var.name}"
+  internal        = false
+  subnets         = ["${split(",", var.subnet_ids)}"]
+  security_groups = ["${split(",",var.security_groups)}"]
 
   access_logs {
     bucket = "${var.log_bucket}"
@@ -87,27 +85,27 @@ resource "aws_alb_target_group" "main" {
 }
 
 resource "aws_alb_listener" "service_https" {
-   load_balancer_arn = "${aws_alb.main.arn}"
-   port = "443"
-   protocol = "HTTPS"
-   ssl_policy = "ELBSecurityPolicy-2015-05"
-   certificate_arn = "${var.ssl_certificate_id}"
+  load_balancer_arn = "${aws_alb.main.arn}"
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2015-05"
+  certificate_arn   = "${var.ssl_certificate_id}"
 
-   default_action {
-     target_group_arn = "${aws_alb_target_group.main.arn}"
-     type = "forward"
-   }
+  default_action {
+    target_group_arn = "${aws_alb_target_group.main.arn}"
+    type             = "forward"
+  }
 }
 
 resource "aws_alb_listener" "service_http" {
-   load_balancer_arn = "${aws_alb.main.arn}"
-   port = "80"
-   protocol = "HTTP"
+  load_balancer_arn = "${aws_alb.main.arn}"
+  port              = "80"
+  protocol          = "HTTP"
 
-   default_action {
-     target_group_arn = "${aws_alb_target_group.main.arn}"
-     type = "forward"
-   }
+  default_action {
+    target_group_arn = "${aws_alb_target_group.main.arn}"
+    type             = "forward"
+  }
 }
 
 resource "aws_route53_record" "external" {
